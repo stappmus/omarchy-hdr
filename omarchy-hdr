@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eu
+dir=$(dirname "$(realpath "$0")")
+runtime="${XDG_DATA_HOME:-$HOME/.local/share}/omarchy-hdr/python-$(/usr/bin/python -c 'import sys; print(sys.implementation.cache_tag)')"
+case ${1:-} in
+  on|serve)
+    if [[ ! -f "$runtime/.pywayland-0.4.19" ]]; then
+      "$dir/prepare-runtime" "$runtime"
+    fi
+    ;;
+esac
+case ${1:-} in
+  serve|calibrate) exec "$runtime/bin/python" "$dir/controller.py" "$@" ;;
+  *) exec /usr/bin/python "$dir/controller.py" "$@" ;;
+esac

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "stappmus.hdr",
+  "name": "HDR Display",
+  "version": "0.1.0",
+  "author": "stappmus",
+  "license": "MIT",
+  "description": "Persistent HDR and side-by-side SDR calibration in the Display panel.",
+  "kinds": ["bar-widget", "service"],
+  "entryPoints": {"barWidget": "Panel.qml", "service": "Service.qml"},
+  "barWidget": {
+    "displayName": "HDR Display",
+    "description": "Display controls with optional HDR calibration.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "omarchy": {"clonedFrom": "omarchy.monitor"}
+}

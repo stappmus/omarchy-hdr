@@ -1,0 +1,20 @@
+#!/bin/bash
+set -eu
+runtime=$1
+mkdir -p "$(dirname "$runtime")"
+exec 9>"$runtime.lock"
+flock 9
+[[ ! -f "$runtime/.pywayland-0.4.19" ]] || exit 0
+if ! command -v uv >/dev/null || ! /usr/bin/python -c 'from PySide6 import QtWidgets' 2>/dev/null || [[ ! -r /usr/share/wayland/wayland.xml ]]; then
+  echo 'Install the HDR runtime dependencies with: sudo pacman -S --needed uv pyside6 wayland v4l-utils' >&2
+  exit 1
+fi
+uv venv --system-site-packages --allow-existing --python /usr/bin/python "$runtime"
+uv pip install --python "$runtime/bin/python" pywayland==0.4.19
+protocols=$("$runtime/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib")+"/pywayland/protocol")')
+stage=$(mktemp -d)
+trap 'rm -rf "$stage"' EXIT
+"$runtime/bin/python" -m pywayland.scanner -i /usr/share/wayland/wayland.xml "$(dirname "$0")/wlr-gamma-control-unstable-v1.xml" -o "$stage"
+install -m644 "$stage/wlr_gamma_control_unstable_v1.py" "$protocols/"
+"$runtime/bin/python" -c 'from pywayland.protocol.wlr_gamma_control_unstable_v1 import ZwlrGammaControlManagerV1'
+touch "$runtime/.pywayland-0.4.19"
