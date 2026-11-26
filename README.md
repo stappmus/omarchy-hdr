@@ -1,8 +1,8 @@
 # HDR Display for Omarchy
 
-Keep an HDR-capable display in HDR when switching between desktop apps, games and video. The plugin adds a **HDR** switch to Omarchy’s existing Display panel. Each display gets its own setting. The regular brightness controls stay in the same place.
+Keep an HDR-capable display in HDR when switching between desktop apps, games and video. The plugin adds an **HDR** section to Omarchy’s existing Display panel. Each display gets its own setting. The regular brightness controls stay in the same place.
 
-<img src="preview.png" width="380" alt="Display panel with the compact HDR switch and calibration sliders icon">
+<img src="preview.png" width="380" alt="HDR section with Off, On and Setup buttons">
 
 ## Install
 
@@ -12,13 +12,13 @@ On Omarchy with the Lua-based Hyprland configuration and Quickshell Display pane
 omarchy plugin add https://github.com/stappmus/omarchy-hdr --enable
 ```
 
-Open **Display** and turn on **HDR** for the selected screen. The switch appears on displays that advertise PQ HDR. The plugin uses the Display widget’s existing position when enabled without an explicit placement. If you use a custom Display clone, disable that clone first.
+Open **Display** and select **HDR → On** for the selected screen. The HDR section appears on displays that advertise PQ HDR. The plugin uses the Display widget’s existing position when enabled without an explicit placement. If you use a custom Display clone, disable that clone first.
 
 The plugin needs Arch packages `v4l-utils` (EDID detection), `uv`, `pyside6` and `wayland`. If any are missing, install them with `sudo pacman -S --needed v4l-utils uv pyside6 wayland`. First activation downloads PyWayland 0.4.19 and its dependencies into a private Python environment under the user's data directory. Subsequent launches use that environment. A writable Wayland gamma table is required.
 
 ## Calibrate
 
-With HDR on, select the **sliders icon** beside the switch. The display stays in HDR. Adjust the SDR card on the left until its white and gray bands match the HDR reference on the right. Choose **Next** at low and medium brightness, then **Save** at full brightness. Closing the wizard restores the starting brightness. Cancel discards the preview. A fixed-brightness screen uses one comparison.
+With HDR on, select **Setup**. The display stays in HDR. Adjust the SDR card on the left until its white and gray bands match the HDR reference on the right. Choose **Next** at low and medium brightness, then **Save** at full brightness. Closing the wizard restores the starting brightness. Cancel discards the preview. A fixed-brightness screen uses one comparison.
 
 The cards are separate native Wayland surfaces. They share a 203-nit reference white before the display’s brightness curve. Highlights can extend above ordinary white. The plugin uses panel-reported luminance when available. Actual emitted brightness depends on the display. External monitors that ignore backlight adjustments in HDR may show little change from the brightness keys with the default curve. Applications need their own HDR output support.
 

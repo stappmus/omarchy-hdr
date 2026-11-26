@@ -1,5 +1,7 @@
 {
   "hdr": "HDR",
-  "calibrate": "Calibrate HDR",
-  "failed": "Display change failed"
+  "failed": "Display change failed",
+  "off": "Off",
+  "on": "On",
+  "setup": "Setup"
 }

@@ -43,9 +43,11 @@ Panel {
     }
   }
   function hdrAction(index) {
-    if (!hdrStatus || hdrTask.running) return
+    if (!hdrStatus || hdrTask.running || index < 0 || index >= sectionCount("hdr")) return
+    const action = ["off", "on", "calibrate"][index]
+    if (action === hdrStatus) return
     hdrMessage = ""
-    hdrTask.command = [hdrCommand, index === 1 ? "calibrate" : (hdrStatus === "on" ? "off" : "on"), hdrOutput]
+    hdrTask.command = [hdrCommand, action, hdrOutput]
     hdrTask.running = true
   }
   Process {
@@ -289,12 +291,13 @@ Panel {
     if (section === "resolution") return current ? current.resolutions.length : 0
     if (section === "refresh") return current ? current.refreshes.length : 0
     if (section === "mirror") return mirrorModes.length
-    if (section === "hdr") return hdrStatus === "on" ? 2 : 1
+    if (section === "hdr") return hdrStatus === "on" ? 3 : 2
     if (section === "layout") return 1
     return 0  // sliders: only the sentinel at -1
   }
 
   function sectionFirstIndex(section) {
+    if (section === "hdr") return hdrStatus === "on" ? 1 : 0
     if (isSliderSection(section)) return -1
     if (section === "displays") return Math.max(0, currentIndex)
     // The other choice, so arriving shows as it turns bold, and Enter switches.
@@ -325,9 +328,7 @@ Panel {
   // h/l: a slider moves, the picker shows the next display and a row of pills
   // walks its pills. The layout takes ctrl+h/l instead, like ctrl+j/k.
   function moveCursorH(delta) {
-    if (focusSection === "hdr") {
-      selectedIndex = delta < 0 && hdrStatus === "on" ? 1 : 0
-    } else if (focusSection === "brightness") {
+    if (focusSection === "brightness") {
       if (current) adjustBrightness(current.name, delta * 5)
     } else if (focusSection === "textsize") {
       adjustTextSize(delta)
@@ -335,7 +336,7 @@ Panel {
       var next = Math.max(0, Math.min(segments.length - 1, currentIndex + delta))
       selectDisplay(segments[next].name)
       selectedIndex = next
-    } else if (focusSection === "scale" || focusSection === "resolution" || focusSection === "refresh" || focusSection === "mirror") {
+    } else if (focusSection === "hdr" || focusSection === "scale" || focusSection === "resolution" || focusSection === "refresh" || focusSection === "mirror") {
       selectedIndex = Math.max(0, Math.min(sectionCount(focusSection) - 1, selectedIndex + delta))
     }
   }
@@ -1133,56 +1134,52 @@ Panel {
             foreground: root.bar.foreground
           }
 
-          Item {
-            id: hdrRow
+          Column {
             visible: root.hdrStatus !== ""
             width: parent.width
-            implicitHeight: Math.max(hdrLabel.implicitHeight, hdrSwitch.implicitHeight, calibrate.size)
+            spacing: Style.space(6) + panelColumn.sliderInset
+            bottomPadding: panelColumn.sliderInset
 
             PanelSectionHeader {
-              id: hdrLabel
               text: hdrStrings.t("hdr")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
-              anchors.left: parent.left
-              anchors.verticalCenter: parent.verticalCenter
             }
-            PanelActionButton {
-              id: calibrate
-              visible: root.hdrStatus === "on"
-              enabled: !hdrTask.running
-              anchors.right: hdrSwitch.left
-              anchors.rightMargin: Style.spacing.controlGap
-              anchors.verticalCenter: parent.verticalCenter
-              iconText: "󱕂"
-              fontFamily: root.bar.fontFamily
-              fontSize: Style.font.body
-              foreground: root.bar.foreground
-              tooltipText: hdrStrings.t("calibrate")
-              Accessible.role: Accessible.Button
-              Accessible.name: tooltipText
-              Accessible.onPressAction: if (enabled) root.hdrAction(1)
-              hasCursor: root.cursorActive && root.focusSection === "hdr" && root.selectedIndex === 1
-              onHovered: hot => { if (hot) root.pointAt("hdr", 1) }
-              onClicked: root.hdrAction(1)
-            }
-            ToggleSwitch {
-              id: hdrSwitch
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              trackHeight: Style.space(16)
-              cursorPad: Style.space(3)
-              foreground: root.bar.foreground
-              checked: root.hdrStatus === "on"
-              busy: hdrTask.running
-              Accessible.role: Accessible.CheckBox
-              Accessible.name: hdrStrings.t("hdr")
-              Accessible.checkable: true
-              Accessible.checked: checked
-              Accessible.onPressAction: root.hdrAction(0)
-              hasCursor: root.cursorActive && root.focusSection === "hdr" && root.selectedIndex === 0
-              onHovered: hot => { if (hot) root.pointAt("hdr", 0) }
-              onToggled: root.hdrAction(0)
+
+            Row {
+              id: hdrChoices
+              width: parent.width
+              spacing: Style.spacing.xs
+
+              Repeater {
+                model: ["off", "on", "setup"]
+                Button {
+                  id: choice
+                  required property int index
+                  required property string modelData
+                  width: (hdrChoices.width - 2 * hdrChoices.spacing) / 3
+                  text: hdrStrings.t(modelData)
+                  fontSize: Style.font.caption
+                  foreground: root.bar.foreground
+                  fontFamily: root.bar.fontFamily
+                  horizontalPadding: Style.spacing.sm
+                  verticalPadding: Style.spacing.controlPaddingY
+                  bordered: true
+                  active: modelData === root.hdrStatus
+                  enabled: !hdrTask.running && index < root.sectionCount("hdr")
+                  opacity: enabled ? 1 : 0.5
+                  hasCursor: root.cursorActive && root.focusSection === "hdr" && root.selectedIndex === index
+                  onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(choice)
+                  onHovered: hot => { if (hot) root.pointAt("hdr", index) }
+                  onClicked: root.hdrAction(index)
+
+                  Accessible.role: modelData === "setup" ? Accessible.Button : Accessible.RadioButton
+                  Accessible.name: text
+                  Accessible.checkable: modelData !== "setup"
+                  Accessible.checked: active
+                  Accessible.onPressAction: if (enabled) root.hdrAction(index)
+                }
+              }
             }
           }
           Text {

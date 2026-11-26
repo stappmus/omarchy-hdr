@@ -1,1 +1,7 @@
-{"hdr":"HDR","calibrate":"Kalibrer HDR","failed":"Kunne ikke endre skjerminnstillingen"}
+{
+  "hdr": "HDR",
+  "failed": "Kunne ikke endre skjerminnstillingen",
+  "off": "Av",
+  "on": "På",
+  "setup": "Oppsett"
+}
