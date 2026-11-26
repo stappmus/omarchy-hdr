@@ -2,6 +2,8 @@
 
 Keep an HDR-capable display in HDR when switching between desktop apps, games and video. The plugin adds a **HDR** switch to Omarchy’s existing Display panel. Each display gets its own setting. The regular brightness controls stay in the same place.
 
+<img src="preview.png" width="380" alt="Display panel with the compact HDR switch and calibration sliders icon">
+
 ## Install
 
 On Omarchy with the Lua-based Hyprland configuration and Quickshell Display panel, run:
