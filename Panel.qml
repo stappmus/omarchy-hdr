@@ -734,7 +734,7 @@ Panel {
     interval: 5000
     running: root.opened
     repeat: true
-    onTriggered: root.refresh()
+    onTriggered: { root.refresh(); root.probeHdr() }
   }
 
   Process {

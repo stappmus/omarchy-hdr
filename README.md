@@ -1,6 +1,6 @@
 # HDR Display for Omarchy
 
-Keep an HDR-capable display in HDR when switching between desktop apps, games and video. The plugin adds a **High dynamic range** switch to Omarchy’s existing Display panel. Each display gets its own setting. The regular brightness controls stay in the same place.
+Keep an HDR-capable display in HDR when switching between desktop apps, games and video. The plugin adds a **HDR** switch to Omarchy’s existing Display panel. Each display gets its own setting. The regular brightness controls stay in the same place.
 
 ## Install
 
@@ -10,7 +10,7 @@ On Omarchy with the Lua-based Hyprland configuration and Quickshell Display pane
 omarchy plugin add https://github.com/stappmus/omarchy-hdr --enable
 ```
 
-Open **Display** and turn on **High dynamic range** for the selected screen. The switch appears on displays that advertise PQ HDR. The plugin uses the Display widget’s existing position when enabled without an explicit placement. If you use a custom Display clone, disable that clone first.
+Open **Display** and turn on **HDR** for the selected screen. The switch appears on displays that advertise PQ HDR. The plugin uses the Display widget’s existing position when enabled without an explicit placement. If you use a custom Display clone, disable that clone first.
 
 The plugin needs Arch packages `v4l-utils` (EDID detection), `uv`, `pyside6` and `wayland`. If any are missing, install them with `sudo pacman -S --needed v4l-utils uv pyside6 wayland`. First activation downloads PyWayland 0.4.19 and its dependencies into a private Python environment under the user's data directory. Subsequent launches use that environment. A writable Wayland gamma table is required.
 

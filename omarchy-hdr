@@ -5,7 +5,7 @@ runtime="${XDG_DATA_HOME:-$HOME/.local/share}/omarchy-hdr/python-$(/usr/bin/pyth
 case ${1:-} in
   on|serve)
     if [[ ! -f "$runtime/.pywayland-0.4.19" ]]; then
-      "$dir/prepare-runtime" "$runtime"
+      "$dir/prepare-runtime" "$runtime" >&2
     fi
     ;;
 esac

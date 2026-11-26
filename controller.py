@@ -226,7 +226,8 @@ def session():
             while True:
                 readable, _, _ = select.select([server, sys.stdin], [], [])
                 if sys.stdin in readable:
-                    if not os.read(sys.stdin.fileno(), 4096): break
+                    events = os.read(sys.stdin.fileno(), 4096)
+                    if not events: break
                     restore()
                 if server in readable:
                     conn, _ = server.accept()
@@ -239,13 +240,18 @@ def session():
                             elif action == "off": stop(name)
                             else: raise ValueError("Invalid HDR action")
                             out.save({**out.settings(), "on": action == "on"})
+                            if action == "off":
+                                run("hyprctl", "reload")  # Restore the user's original monitor rules.
                             error = None
                         except (ValueError, TypeError, OSError, RuntimeError, subprocess.SubprocessError) as e:
                             error = str(e)
                         with contextlib.suppress(ConnectionError):
                             conn.send(json.dumps(error).encode())
         finally:
-            for name in list(workers): stop(name)
+            if workers:
+                for name in list(workers): stop(name)
+                with contextlib.suppress(OSError, subprocess.SubprocessError):
+                    run("hyprctl", "reload")
             endpoint.unlink(missing_ok=True)
 
 
