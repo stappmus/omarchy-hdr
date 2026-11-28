@@ -14,6 +14,9 @@ from pathlib import Path
 
 from display import ANCHORS, Output, RUNTIME, STATE, monitors, run
 
+FADE_SECONDS = 0.22
+FRAME_SECONDS = 1 / 60
+
 
 def serve(out):
     from ramp import Ramp, brightness_gain, gain_at, pq_table
@@ -28,20 +31,24 @@ def serve(out):
     step_index = None
     fixed = False
 
-    def apply(level):
-        nonlocal last, last_white
+    shown_level = None
+    next_frame = None
+
+    def apply(level, *, update_white=True):
+        nonlocal last, last_white, shown_level
+        shown_level = level
         gain = brightness_gain(level, curve, out)
         if gain != last:
             ramp.set(pq_table(ramp.size, gain, out.peak or 1000))
             last = gain
 
         nits = round(gain_at(level, white))
-        if nits != last_white:
+        if update_white and nits != last_white:
             out.set_sdr_white(nits)
             last_white = nits
 
     def end_preview():
-        nonlocal client, original, white, step_index, fixed
+        nonlocal client, original, white, step_index, fixed, target
         if client:
             client.close()
             client = None
@@ -49,6 +56,7 @@ def serve(out):
             if not fixed: out.set_brightness(original)
             white = settings.get("sdr_white", [203] * 3)
             apply(original)
+            target = original
         original = None
         step_index = None
         fixed = False
@@ -78,9 +86,12 @@ def serve(out):
             print("ready", flush=True)
             event = (out.backlight / "actual_brightness").open() if out.backlight else None
             if event: event.read()
+            target = shown_level
             while ramp.size:
                 tracking = not client and (len(set(curve)) > 1 or len(set(white)) > 1)
                 interval = 2 if tracking and not event else None
+                if next_frame is not None:
+                    interval = max(0, next_frame - time.monotonic())
                 ready, _, changed = select.select([server, sys.stdin, ramp.display.get_fd()] + ([client] if client else []),
                                                   [], [event] if event else [], interval)
                 if sys.stdin in ready:
@@ -90,14 +101,34 @@ def serve(out):
                     event.read()
                 if ramp.display.get_fd() in ready:
                     ramp.display.dispatch(block=True)
-                if (changed or not ready) and tracking and ramp.size:
-                    apply(out.brightness())
+                if not ramp.size:
+                    break
+                poll_due = not event and not ready and next_frame is None
+                if tracking and (changed or poll_due):
+                    level = out.brightness()
+                    if level != target:
+                        fade_from, target = shown_level, level
+                        fade_started = next_frame = time.monotonic()
+                now = time.monotonic()
+                if next_frame is not None and now >= next_frame:
+                    progress = (now - fade_started) / FADE_SECONDS
+                    if progress >= 1:
+                        apply(target)
+                        next_frame = None
+                    else:
+                        # Ease out and retarget from the last displayed level on key repeat.
+                        weight = 1 - (1 - progress) ** 2
+                        apply(fade_from + (target - fade_from) * weight, update_white=False)
+                        next_frame = now + FRAME_SECONDS
                 if server in ready:
                     conn, _ = server.accept()
                     if client:
                         conn.send(b'{"error":"Calibration is already open"}')
                         conn.close()
                     else:
+                        if next_frame is not None:
+                            apply(target)
+                            next_frame = None
                         client = conn
                         client.send(json.dumps({"sdr_white": white}).encode())
                 if client and client in ready:
