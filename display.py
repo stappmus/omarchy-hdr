@@ -62,13 +62,19 @@ class Output:
         # These are starting estimates; the visual match overrides each point.
         self.source_curve = self.backlight is not None and "Luminance Information: Guidance for the Source device" in info
 
-    def defaults(self):
-        if self.source_curve:
-            return [(self.floor + (self.ceiling - self.floor) * p / 100) / 203 for p in ANCHORS]
-        return [1.0] * len(ANCHORS)
+    def panel_luminance(self, level):
+        return self.floor + (self.ceiling - self.floor) * level / 100
 
     def settings(self):
-        return json.loads(self.file.read_text()) if self.file.exists() else {"on": False, "curve": self.defaults()}
+        settings = json.loads(self.file.read_text()) if self.file.exists() else {"on": False}
+        if self.source_curve:
+            original = [self.panel_luminance(level) / 203 for level in ANCHORS]
+            # Apply the dimmer floor to new and previously unmodified panel curves.
+            if settings.get("curve", original) == original:
+                settings["curve"] = [original[0] / 8, *original[1:]]
+        else:
+            settings.setdefault("curve", [1.0] * len(ANCHORS))
+        return settings
 
     def save(self, settings):
         STATE.mkdir(parents=True, exist_ok=True)

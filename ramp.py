@@ -1,4 +1,5 @@
 import array
+import math
 import os
 
 from pywayland.client import Display
@@ -15,6 +16,30 @@ def gain_at(level, curve):
             t = max(0, (level - left) / (right - left))
             return curve[i] + (curve[i + 1] - curve[i]) * t
     return curve[-1]
+
+
+def brightness_gain(level, curve, output):
+    low, middle, high = ANCHORS
+    if not output.source_curve:
+        return gain_at(level, curve)
+    if level <= low:
+        return curve[0] * output.panel_luminance(level) / output.panel_luminance(low)
+    if level >= middle or not 0 < curve[0] < curve[1]:
+        return gain_at(level, curve)
+
+    # Interpolate log gain so a slider step makes a proportional change in light.
+    # Match the slopes of the panel curve at low and the linear segment at middle.
+    span = middle - low
+    start, end = math.log(curve[0]), math.log(curve[1])
+    slope_low = (output.ceiling - output.floor) / (100 * output.panel_luminance(low))
+    slope_middle = (curve[2] - curve[1]) / ((high - middle) * curve[1])
+    # Ordered Bezier controls keep even steep custom calibrations monotone.
+    half_range = (end - start) / 2
+    first = start + min(half_range, max(0, slope_low * span / 3))
+    second = end - min(half_range, max(0, slope_middle * span / 3))
+    t = (level - low) / span
+    u = 1 - t
+    return math.exp(u**3 * start + 3 * u**2 * t * first + 3 * u * t**2 * second + t**3 * end)
 
 
 def pq_table(size, gain, peak):

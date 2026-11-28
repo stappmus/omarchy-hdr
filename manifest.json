@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "stappmus.hdr",
   "name": "HDR Display",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "stappmus",
   "license": "MIT",
   "description": "Persistent HDR and side-by-side SDR calibration in the Display panel.",

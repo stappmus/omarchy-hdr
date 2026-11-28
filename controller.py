@@ -16,7 +16,7 @@ from display import ANCHORS, Output, RUNTIME, STATE, monitors, run
 
 
 def serve(out):
-    from ramp import Ramp, gain_at, pq_table
+    from ramp import Ramp, brightness_gain, gain_at, pq_table
     ramp = Ramp(out.name)
     settings = out.settings()
     curve = settings["curve"]
@@ -30,9 +30,7 @@ def serve(out):
 
     def apply(level):
         nonlocal last, last_white
-        gain = gain_at(level, curve)
-        if level < ANCHORS[0] and out.source_curve:
-            gain *= (out.floor + level * (out.ceiling - out.floor) / 100) / (out.defaults()[0] * 203)
+        gain = brightness_gain(level, curve, out)
         if gain != last:
             ramp.set(pq_table(ramp.size, gain, out.peak or 1000))
             last = gain
